@@ -1,0 +1,700 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CampusDeal Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: screen index on the left, one device frame in the centre, caption with IDs and requirement links below. */
+:root{
+  --bg:#eef1ee; --panel:#ffffff; --ink:#18241f; --muted:#5d6b64; --line:#d6ddd8;
+  --accent:#0f6b55; --accent-soft:#dcefe8; --amber:#b86e0c; --amber-soft:#fbefd9;
+  --red:#b3261e; --red-soft:#fbe4e2; --blue:#2f5b9a; --blue-soft:#e3ebf7;
+  --screen:#f8faf8; --card:#ffffff; --device:#1c2622;
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Figtree", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111816; --panel:#18211e; --ink:#e4ebe7; --muted:#9aaaa2; --line:#2c3833;
+  --accent-soft:#173d33; --amber-soft:#3b2c14; --red-soft:#3d1c1a; --blue-soft:#1b2a40;
+  --device:#000; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111816; --panel:#18211e; --ink:#e4ebe7; --muted:#9aaaa2; --line:#2c3833;
+  --accent-soft:#173d33; --amber-soft:#3b2c14; --red-soft:#3d1c1a; --blue-soft:#1b2a40;
+  --device:#000; color-scheme:dark}
+/* The app screens themselves stay light: they are mock-ups of the mobile app. */
+.device{--ink:#18241f; --muted:#5d6b64; --line:#d6ddd8; --accent-soft:#dcefe8; --amber-soft:#fbefd9; --red-soft:#fbe4e2; --blue-soft:#e3ebf7; color-scheme:light}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;margin:0}
+.wrap{display:grid;grid-template-columns:270px minmax(0,1fr);gap:28px;max-width:1240px;margin:0 auto;padding-block:24px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+@media (max-width:820px){.wrap{grid-template-columns:minmax(0,1fr)}}
+.index h1{font-family:var(--f-display);font-size:22px;margin:0 0 4px;letter-spacing:-.01em}
+.index p.sub{color:var(--muted);margin:0 0 16px;font-size:13px}
+.index h2{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:18px 0 6px}
+.index button{display:flex;gap:8px;width:100%;text-align:left;background:none;border:0;padding:6px 8px;border-radius:6px;color:var(--ink);font:inherit;font-size:13px;cursor:pointer}
+.index button .id{font-family:var(--f-mono);font-size:11px;color:var(--muted);min-width:56px;padding-top:1px}
+.index button:hover{background:var(--panel)}
+.index button[aria-current="true"]{background:var(--accent-soft)}
+.index button[aria-current="true"] .id{color:var(--accent)}
+.index button:focus-visible{outline:2px solid var(--accent)}
+.stage{display:flex;flex-direction:column;align-items:center;gap:16px;min-width:0}
+.caption{max-width:560px;width:100%;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.caption .row{display:flex;justify-content:space-between;gap:12px;align-items:baseline;flex-wrap:wrap}
+.caption b{font-family:var(--f-display);font-size:17px}
+.caption .refs{font-family:var(--f-mono);font-size:11px;color:var(--accent)}
+.caption p{margin:6px 0 0;color:var(--muted);line-height:1.5}
+.pager{display:flex;gap:8px}
+.pager button{font:inherit;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:6px 12px;cursor:pointer}
+
+/* ---------- device ---------- */
+.device{width:360px;max-width:100%;height:740px;background:var(--device);border-radius:36px;padding:10px;box-shadow:0 18px 40px rgba(10,30,20,.18)}
+.device.wide{width:960px;height:540px;border-radius:14px;padding:8px}
+.vp{width:100%;height:100%;background:var(--screen);border-radius:27px;overflow:hidden;position:relative;display:flex;flex-direction:column;color:var(--ink)}
+.device.wide .vp{border-radius:8px}
+.deviceScroll{overflow-x:auto;max-width:100%}
+.screen{display:none;flex-direction:column;height:100%}
+.screen.on{display:flex}
+.sbar{display:flex;justify-content:space-between;padding:10px 22px 4px;font-size:12px;font-weight:600;font-variant-numeric:tabular-nums}
+.top{display:flex;align-items:center;gap:10px;padding:8px 16px 10px}
+.top h3{font-family:var(--f-display);font-size:19px;margin:0;flex:1;letter-spacing:-.01em}
+.back{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:#fff;display:grid;place-items:center;cursor:pointer;color:var(--ink)}
+.body{flex:1;overflow:auto;padding:4px 16px 16px;display:flex;flex-direction:column;gap:12px}
+.foot{padding:12px 16px 18px;border-top:1px solid var(--line);background:#fff;display:flex;flex-direction:column;gap:8px}
+.nav{display:flex;justify-content:space-around;padding:8px 6px 16px;border-top:1px solid var(--line);background:#fff;font-size:11px;color:var(--muted)}
+.nav span{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
+.nav span.on{color:var(--accent);font-weight:700}
+.nav i{width:20px;height:20px;border-radius:6px;border:2px solid currentColor;display:block}
+.nav .sell i{border-radius:50%;background:var(--accent);border-color:var(--accent);position:relative}
+.nav .sell i::after{content:"+";color:#fff;position:absolute;inset:-3px 0 0;text-align:center;font-weight:700;font-style:normal;font-size:15px}
+
+.btn{font:inherit;font-weight:700;font-size:15px;border-radius:12px;padding:13px 14px;border:0;cursor:pointer;width:100%;background:var(--accent);color:#fff}
+.btn.sec{background:#fff;color:var(--accent);border:1.5px solid var(--accent)}
+.btn.ghost{background:none;color:var(--muted);font-weight:600;padding:8px}
+.btn.danger{background:var(--red)}
+.btn.dangerline{background:#fff;color:var(--red);border:1.5px solid var(--red)}
+.btn[disabled]{background:#e3e7e4;color:#8d9a93;border-color:#e3e7e4;cursor:not-allowed}
+.btnrow{display:flex;gap:8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+.mono{font-family:var(--f-mono)}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:99px;letter-spacing:.02em}
+.p-listed{background:var(--accent-soft);color:var(--accent)}
+.p-reserved{background:var(--blue-soft);color:var(--blue)}
+.p-review{background:var(--amber-soft);color:var(--amber)}
+.p-sold{background:#18241f;color:#fff}
+.p-red{background:var(--red-soft);color:var(--red)}
+.p-gray{background:#e8ece9;color:#55625b}
+.alert{border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.45}
+.alert b{display:block;margin-bottom:2px}
+.a-red{background:var(--red-soft);color:#7d1913}
+.a-amber{background:var(--amber-soft);color:#6d4207}
+.a-green{background:var(--accent-soft);color:#0b4a3b}
+.a-blue{background:var(--blue-soft);color:#1f3e6b}
+.score{display:flex;align-items:center;gap:8px}
+.score .bar{flex:1;height:6px;border-radius:9px;background:#e3e7e4;overflow:hidden}
+.score .bar i{display:block;height:100%;background:var(--accent)}
+.avatar{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-weight:700;color:#fff;flex:none}
+.av-a{background:#8a4f9e}.av-m{background:#2f5b9a}.av-mod{background:#4b5a53}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:12px;font-weight:600;color:var(--muted)}
+.input{border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff;font:inherit;color:var(--ink)}
+.input.focus{border-color:var(--accent)}
+.input.err{border-color:var(--red)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1.5px solid var(--line);border-radius:99px;padding:6px 11px;font-size:12px;font-weight:600;background:#fff}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.radio{display:flex;gap:10px;align-items:flex-start;padding:11px 12px;border:1.5px solid var(--line);border-radius:12px;background:#fff}
+.radio.on{border-color:var(--accent);background:#f2faf7}
+.radio.off{opacity:.55}
+.radio .dot{width:18px;height:18px;border-radius:50%;border:2px solid #9aa8a0;flex:none;margin-top:1px}
+.radio.on .dot{border:5px solid var(--accent)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px}
+.kv dt{color:var(--muted)}.kv dd{margin:0;font-weight:600}
+.hr{height:1px;background:var(--line)}
+.photo{border-radius:14px;height:150px;background:linear-gradient(135deg,#2f5b9a,#173a6a);display:grid;place-items:center;position:relative;overflow:hidden}
+.photo.sm{height:92px;border-radius:10px}
+.book{width:62px;height:84px;background:#f3e7c9;border-radius:3px 6px 6px 3px;box-shadow:inset 6px 0 0 #c9b88d, 4px 6px 0 rgba(0,0,0,.18);position:relative}
+.book::after{content:"DS&A";position:absolute;top:18px;left:12px;font:700 11px var(--f-body);color:#173a6a}
+.photo.sm .book{transform:scale(.6)}
+.ph-lamp{background:linear-gradient(135deg,#d9a441,#9b6a17)}
+.ph-chair{background:linear-gradient(135deg,#5b6d64,#33433b)}
+.ph-calc{background:linear-gradient(135deg,#8a4f9e,#5a2f6b)}
+.shape{width:46px;height:46px;border-radius:10px;background:rgba(255,255,255,.85)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.lcard{background:#fff;border:1px solid var(--line);border-radius:12px;padding:6px;cursor:pointer}
+.lcard .t{font-size:12px;font-weight:600;margin:6px 2px 0;line-height:1.3}
+.lcard .p{font-weight:800;margin:2px 2px 2px;font-size:14px}
+.lcard .s{font-size:11px;color:var(--muted);margin:0 2px 2px}
+.price{font-family:var(--f-display);font-size:28px;font-weight:700;letter-spacing:-.02em}
+.rounds{display:flex;gap:4px}
+.rounds i{width:28px;height:6px;border-radius:9px;background:#dfe5e1}
+.rounds i.done{background:var(--accent)}
+.rounds i.now{background:var(--amber)}
+.timer{display:flex;align-items:center;gap:8px;background:var(--amber-soft);color:#6d4207;border-radius:10px;padding:8px 10px;font-size:12px;font-weight:600}
+.timer .mono{font-size:14px;margin-left:auto}
+.bubble{border-radius:14px;padding:9px 12px;max-width:78%;font-size:13px}
+.bubble.me{background:var(--accent);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.bubble.them{background:#fff;border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:4px}
+.bubble b{font-size:17px;display:block}
+.bubble .meta{font-size:11px;opacity:.75}
+.thread{display:flex;flex-direction:column;gap:8px}
+.cam{flex:1;background:#0f1412;position:relative;display:grid;place-items:center}
+.cam .frame{width:210px;height:210px;position:relative}
+.cam .frame::before,.cam .frame::after{content:"";position:absolute;inset:0;border:3px solid #7ee0c2;clip-path:polygon(0 0,28% 0,28% 6%,6% 6%,6% 28%,0 28%,0 0,72% 0,100% 0,100% 28%,94% 28%,94% 6%,72% 6%,72% 0,100% 72%,100% 100%,72% 100%,72% 94%,94% 94%,94% 72%,100% 72%,0 72%,6% 72%,6% 94%,28% 94%,28% 100%,0 100%);border-radius:14px}
+.cam .frame canvas{position:absolute;inset:30px;width:150px;height:150px;opacity:.55;border-radius:4px}
+.cam .scanline{position:absolute;left:18px;right:18px;top:48%;height:2px;background:#7ee0c2;box-shadow:0 0 12px #7ee0c2}
+.otp{display:flex;gap:6px;justify-content:center}
+.otp span{width:40px;height:50px;border:1.5px solid var(--line);border-radius:10px;display:grid;place-items:center;font:600 22px var(--f-mono);background:#fff}
+.otp.err span{border-color:var(--red);color:var(--red)}
+.big-ok{width:84px;height:84px;border-radius:50%;background:var(--accent);margin:8px auto 0;display:grid;place-items:center}
+.big-ok svg{width:42px;height:42px}
+.stat{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:13px}
+.stat:last-child{border-bottom:0}
+.stat b{font-variant-numeric:tabular-nums}
+.up{color:var(--accent);font-weight:800}
+.down{color:var(--red);font-weight:800}
+.sheet-bg{position:absolute;inset:0;background:rgba(15,25,20,.45);display:flex;align-items:flex-end}
+.sheet{background:#fff;width:100%;border-radius:20px 20px 0 0;padding:16px 16px 20px;display:flex;flex-direction:column;gap:10px}
+.sheet .grab{width:40px;height:4px;border-radius:9px;background:#cfd6d2;margin:0 auto 4px}
+.steps{display:flex;gap:6px;align-items:center;font-size:11px;font-weight:700}
+.steps span{padding:4px 8px;border-radius:99px;background:#e8ece9;color:#55625b}
+.steps span.on{background:var(--amber-soft);color:var(--amber)}
+.steps em{flex:1;height:2px;background:#dfe5e1}
+.qrbox{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.qrbox canvas{width:190px;height:190px;image-rendering:pixelated}
+.code{font:600 28px var(--f-mono);letter-spacing:.12em}
+.brand{font-family:var(--f-display);font-weight:700;font-size:30px;letter-spacing:-.02em}
+.brand span{color:var(--accent)}
+.logo{width:64px;height:64px;border-radius:18px;background:var(--accent);display:grid;place-items:center}
+.ssobtn{display:flex;gap:10px;align-items:center;justify-content:center}
+.ssobtn i{width:22px;height:22px;border-radius:5px;background:#fff;display:block;position:relative}
+.ssobtn i::after{content:"CBÜ";position:absolute;inset:0;font:800 8px/22px var(--f-body);color:var(--accent);text-align:center;font-style:normal}
+
+/* moderator desktop */
+.mod{display:grid;grid-template-columns:190px 1fr;height:100%}
+.mside{background:#18241f;color:#cfdad4;padding:16px 12px;display:flex;flex-direction:column;gap:4px;font-size:13px}
+.mside .brand{font-size:18px;color:#fff;margin-bottom:12px}
+.mside a{padding:8px 10px;border-radius:8px;display:flex;justify-content:space-between;cursor:pointer}
+.mside a.on{background:#2b3a33;color:#fff;font-weight:600}
+.mside a em{font-style:normal;background:var(--amber);color:#fff;border-radius:99px;padding:0 7px;font-size:11px;font-weight:700}
+.mmain{padding:18px 22px;overflow:auto;display:flex;flex-direction:column;gap:14px;min-width:0}
+.mmain h3{font-family:var(--f-display);font-size:21px;margin:0}
+table.q{width:100%;border-collapse:collapse;font-size:13px;background:#fff;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+table.q th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:9px 12px;background:#f1f4f2;font-weight:700}
+table.q td{padding:10px 12px;border-top:1px solid var(--line);vertical-align:top}
+table.q tr.hot td{background:#fbfdf9;cursor:pointer}
+table.q tr.hot:hover td{background:var(--accent-soft)}
+.cols3{display:grid;grid-template-columns:.95fr 1.45fr .95fr;gap:12px}
+.log{font-size:12px;display:flex;flex-direction:column}
+.log div{display:grid;grid-template-columns:84px 1fr;gap:8px;padding:7px 0;border-bottom:1px dashed var(--line)}
+.log div:last-child{border:0}
+.log .mono{font-size:11px;color:var(--muted)}
+.lock{font-size:11px;color:var(--muted);display:flex;gap:6px;align-items:center}
+textarea.input{resize:none;min-height:96px}
+@media (prefers-reduced-motion:no-preference){.cam .scanline{animation:scan 2.2s ease-in-out infinite alternate}}
+@keyframes scan{from{top:30%}to{top:68%}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <aside class="index" aria-label="Screens">
+    <h1>CampusDeal</h1>
+    <p class="sub">Navigable UI prototype · RAD 3.3.5 · Group 15. Tap buttons inside the phone or pick a screen below.</p>
+    <nav id="index"></nav>
+  </aside>
+  <main class="stage">
+    <div class="deviceScroll"><div class="device" id="device"><div class="vp" id="vp">
+
+<!-- UI-01 -->
+<section class="screen" data-id="ui-01">
+  <div class="sbar"><span>09:41</span><span>5G ▮▮▮</span></div>
+  <div class="body" style="justify-content:center;align-items:center;text-align:center;gap:14px">
+    <div class="logo"><svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="#fff" stroke-width="2"><path d="M4 9l8-5 8 5v9a2 2 0 01-2 2H6a2 2 0 01-2-2z"/><path d="M9 20v-6h6v6"/></svg></div>
+    <div class="brand">Campus<span>Deal</span></div>
+    <p class="muted" style="margin:0;max-width:250px;line-height:1.5">Buy and sell second-hand items with verified Manisa Celal Bayar University members.</p>
+  </div>
+  <div class="foot" style="border:0;background:none">
+    <button class="btn ssobtn" data-go="ui-02"><i></i>Sign in with MCBU SSO</button>
+    <p class="small muted" style="text-align:center;margin:0">Use your @cbu.edu.tr or @ogr.cbu.edu.tr account. Other users cannot see listings, offers or profiles.</p>
+    <button class="btn ghost small" data-go="ui-01e">Sign in with a different account</button>
+  </div>
+</section>
+
+<!-- UI-01e -->
+<section class="screen" data-id="ui-01e">
+  <div class="sbar"><span>09:42</span><span>5G ▮▮▮</span></div>
+  <div class="body" style="justify-content:center;align-items:center;text-align:center;gap:14px">
+    <div class="logo"><svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="#fff" stroke-width="2"><path d="M4 9l8-5 8 5v9a2 2 0 01-2 2H6a2 2 0 01-2-2z"/><path d="M9 20v-6h6v6"/></svg></div>
+    <div class="brand">Campus<span>Deal</span></div>
+    <div class="alert a-red" style="text-align:left"><b>Sign-in refused</b>The SSO service returned an account outside the university (m.kaya@gmail.com). Only verified MCBU students, faculty and staff can use CampusDeal.</div>
+  </div>
+  <div class="foot" style="border:0;background:none">
+    <button class="btn ssobtn" data-go="ui-02"><i></i>Try again with MCBU SSO</button>
+  </div>
+</section>
+
+<!-- UI-02 -->
+<section class="screen" data-id="ui-02">
+  <div class="sbar"><span>09:43</span><span>5G ▮▮▮</span></div>
+  <div class="top"><h3>Browse</h3><span class="pill p-listed">Verified campus</span></div>
+  <div class="body">
+    <div class="input muted">Search books, furniture, electronics…</div>
+    <div class="chips"><span class="chip on">All</span><span class="chip">Books</span><span class="chip">Furniture</span><span class="chip">Electronics</span><span class="chip">≤ ₺500</span></div>
+    <div class="card" style="display:flex;gap:10px;align-items:center;background:var(--accent-soft);border-color:transparent">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0f6b55" stroke-width="2"><path d="M12 22c4-3 7-7 7-12a7 7 0 00-14 0c0 5 3 9 7 12z"/><path d="M12 15V8M9 11l3-3 3 3"/></svg>
+      <div class="small"><b>42 reuse points</b> from 3 verified handovers<br><span class="muted">Mert K. · reliability 80</span></div>
+    </div>
+    <div class="grid2">
+      <div class="lcard" data-go="ui-03"><div class="photo sm"><div class="book"></div></div><div class="t">Data Structures &amp; Algorithms, 3rd ed.</div><div class="p">₺300</div><div class="s">Books · Good · Ayşe Y. 90</div></div>
+      <div class="lcard"><div class="photo sm ph-lamp"><div class="shape" style="border-radius:50% 50% 8px 8px"></div></div><div class="t">IKEA desk lamp, white</div><div class="p">₺150</div><div class="s">Furniture · Like new · Can D. 84</div></div>
+      <div class="lcard"><div class="photo sm ph-chair"><div class="shape"></div></div><div class="t">Office chair, adjustable</div><div class="p">₺900</div><div class="s">Furniture · Fair · Elif S. 77</div></div>
+      <div class="lcard"><div class="photo sm ph-calc"><div class="shape" style="width:34px;height:48px"></div></div><div class="t">Casio fx-991 calculator</div><div class="p">₺450</div><div class="s">Electronics · Good · Burak T. 92</div></div>
+    </div>
+  </div>
+  <div class="nav"><span class="on"><i></i>Browse</span><span class="sell" data-go="ui-02a"><i></i>Sell</span><span data-go="ui-04"><i></i>Offers</span><span><i></i>Profile</span></div>
+</section>
+
+<!-- UI-02a -->
+<section class="screen" data-id="ui-02a">
+  <div class="sbar"><span>09:50</span><span>5G ▮▮▮</span></div>
+  <div class="top"><button class="back" data-go="ui-02" aria-label="Back">‹</button><h3>New listing</h3></div>
+  <div class="body">
+    <div class="chips"><span class="photo sm" style="width:84px;height:70px"><div class="book" style="transform:scale(.5)"></div></span><span class="photo sm ph-chair" style="width:84px;height:70px;opacity:.35"></span><span class="chip" style="width:84px;height:70px;border-radius:10px;display:grid;place-items:center;border-style:dashed">+ Photo</span></div>
+    <div class="field"><label for="t1">Title</label><div class="input focus" id="t1">Data Structures &amp; Algorithms, 3rd ed.</div></div>
+    <div class="btnrow">
+      <div class="field" style="flex:1"><label>Category</label><div class="input">Books ▾</div></div>
+      <div class="field" style="flex:1"><label>Price (₺)</label><div class="input">300</div></div>
+    </div>
+    <div class="field"><label>Condition</label><div class="chips"><span class="chip">Like new</span><span class="chip on">Good</span><span class="chip">Fair</span></div></div>
+    <div class="field"><label>Description</label><div class="input" style="min-height:58px">Some pencil notes in chapters 4–6. No missing pages.</div></div>
+    <div class="alert a-blue">New listings appear as <b style="display:inline">Listed</b>. You can edit or withdraw it later; a withdrawn listing becomes Removed.</div>
+  </div>
+  <div class="foot"><button class="btn" data-go="ui-03">Publish listing</button></div>
+</section>
+
+<!-- UI-03 -->
+<section class="screen" data-id="ui-03">
+  <div class="sbar"><span>09:44</span><span>5G ▮▮▮</span></div>
+  <div class="top"><button class="back" data-go="ui-02" aria-label="Back">‹</button><h3>Listing</h3><button class="btn ghost small" style="width:auto;color:var(--red)" data-go="ui-03b">Report</button></div>
+  <div class="body">
+    <div class="photo"><div class="book"></div></div>
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:center"><span class="pill p-listed">Listed</span><span class="small muted">Books · Good condition</span></div>
+      <div style="font-weight:700;font-size:16px;margin-top:8px">Data Structures &amp; Algorithms, 3rd ed.</div>
+      <div class="price">₺300</div>
+      <div class="small muted">Some pencil notes in chapters 4–6. No missing pages.</div>
+    </div>
+    <div class="card" style="display:flex;gap:10px;align-items:center">
+      <div class="avatar av-a">AY</div>
+      <div style="flex:1"><div style="font-weight:700">Ayşe Y. <span class="small muted">· Seller</span></div>
+        <div class="score small"><span>Reliability</span><div class="bar"><i style="width:90%"></i></div><b>90</b></div>
+        <div class="small muted">12 verified handovers</div></div>
+    </div>
+    <div class="small muted">Handover on campus only, verified with a one-time QR code. Cash payment at handover.</div>
+  </div>
+  <div class="foot">
+    <button class="btn" data-go="ui-04c">Buy at ₺300</button>
+    <button class="btn sec" data-go="ui-04">Make an offer</button>
+  </div>
+</section>
+
+<!-- UI-03a -->
+<section class="screen" data-id="ui-03a">
+  <div class="sbar"><span>09:44</span><span>5G ▮▮▮</span></div>
+  <div class="top"><button class="back" data-go="ui-02" aria-label="Back">‹</button><h3>Listing</h3></div>
+  <div class="body">
+    <div class="photo" style="height:120px"><div class="book"></div></div>
+    <div><span class="pill p-listed">Listed</span>
+      <div style="font-weight:700;font-size:16px;margin-top:8px">Data Structures &amp; Algorithms, 3rd ed.</div>
+      <div class="price">₺300</div></div>
+    <div class="alert a-amber"><b>One active deal at a time</b>Your reliability score is 38. Users below 40 can have only one active offer or listing. You already have an open offer on “IKEA desk lamp”. Finish or withdraw it to make a new offer.</div>
+    <div class="card"><div class="score small"><span>Your reliability</span><div class="bar"><i style="width:38%;background:var(--amber)"></i></div><b>38</b></div>
+      <div class="small muted" style="margin-top:6px">Each verified handover adds 5 points.</div></div>
+  </div>
+  <div class="foot">
+    <button class="btn" disabled>Buy at ₺300</button>
+    <button class="btn sec">View my active offer</button>
+  </div>
+</section>
+
+<!-- UI-03b -->
+<section class="screen" data-id="ui-03b">
+  <div class="sbar"><span>09:45</span><span>5G ▮▮▮</span></div>
+  <div class="top"><h3>Listing</h3></div>
+  <div class="body"><div class="photo"><div class="book"></div></div><div class="price">₺300</div></div>
+  <div class="sheet-bg"><div class="sheet">
+    <div class="grab"></div>
+    <div style="font-family:var(--f-display);font-weight:700;font-size:18px">Report this listing</div>
+    <div class="radio on"><span class="dot"></span><div><b>Prohibited item</b><div class="small muted">Weapons, drugs, counterfeit goods…</div></div></div>
+    <div class="radio"><span class="dot"></span><div><b>Misleading description or photos</b></div></div>
+    <div class="radio"><span class="dot"></span><div><b>Spam or not a campus sale</b></div></div>
+    <div class="input small muted" style="min-height:52px">Add details for the moderator (optional)</div>
+    <div class="alert a-amber small">The listing becomes <b style="display:inline">Under Review</b> and is hidden from Browse until a moderator decides.</div>
+    <button class="btn danger" data-go="ui-09b">Send report</button>
+    <button class="btn ghost" data-go="ui-03">Cancel</button>
+  </div></div>
+</section>
+
+<!-- UI-04 -->
+<section class="screen" data-id="ui-04">
+  <div class="sbar"><span>10:19</span><span>5G ▮▮▮</span></div>
+  <div class="top"><button class="back" data-go="ui-03" aria-label="Back">‹</button><h3>Negotiation</h3><span class="pill p-review">Countered</span></div>
+  <div class="body">
+    <div class="card" style="display:flex;gap:10px;align-items:center;padding:10px">
+      <div class="photo sm" style="width:46px;height:46px;border-radius:8px"><div class="book" style="transform:scale(.38)"></div></div>
+      <div style="flex:1"><div style="font-weight:700;font-size:13px">DS&amp;A textbook</div><div class="small muted">Listed at ₺300</div></div>
+    </div>
+    <div class="grid2">
+      <div class="card" style="padding:10px"><div class="small muted">You · Buyer</div><div style="font-weight:700">Mert K.</div><div class="score small"><div class="bar"><i style="width:80%"></i></div><b>80</b></div></div>
+      <div class="card" style="padding:10px"><div class="small muted">Seller</div><div style="font-weight:700">Ayşe Y.</div><div class="score small"><div class="bar"><i style="width:90%"></i></div><b>90</b></div></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center"><span class="small" style="font-weight:700">Round 2 of 3</span><div class="rounds"><i class="done"></i><i class="now"></i><i></i></div></div>
+    <div class="thread">
+      <div class="bubble me"><span class="meta">Round 1 · Your offer</span><b>₺220</b></div>
+      <div class="bubble them"><span class="meta">Round 2 · Ayşe countered</span><b>₺260</b></div>
+    </div>
+    <div class="timer">Your reply is due in<span class="mono">23:41:08</span></div>
+    <div class="field"><label>Counter-offer (final round)</label><div class="input focus">₺240</div>
+      <span class="small muted">After round 3, you can only accept or decline. No reply in 24 h: offer expires and you lose 2 points.</span></div>
+  </div>
+  <div class="foot">
+    <div class="btnrow"><button class="btn sec" data-go="ui-04c">Accept ₺260</button><button class="btn" data-go="ui-04a">Send ₺240</button></div>
+    <button class="btn ghost">Decline offer</button>
+  </div>
+</section>
+
+<!-- UI-04a -->
+<section class="screen" data-id="ui-04a">
+  <div class="sbar"><span>11:02</span><span>5G ▮▮▮</span></div>
+  <div class="top"><button class="back" aria-label="Back">‹</button><h3>Negotiation</h3><span class="pill p-review">Final round</span></div>
+  <div class="body">
+    <div class="grid2">
+      <div class="card" style="padding:10px"><div class="small muted">Buyer</div><div style="font-weight:700">Mert K.</div><div class="score small"><div class="bar"><i style="width:80%"></i></div><b>80</b></div></div>
+      <div class="card" style="padding:10px"><div class="small muted">You · Seller</div><div style="font-weight:700">Ayşe Y.</div><div class="score small"><div class="bar"><i style="width:90%"></i></div><b>90</b></div></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center"><span class="small" style="font-weight:700">Round 3 of 3</span><div class="rounds"><i class="done"></i><i class="done"></i><i class="now"></i></div></div>
+    <div class="thread">
+      <div class="bubble them"><span class="meta">Round 1 · Mert offered</span><b>₺220</b></div>
+      <div class="bubble me"><span class="meta">Round 2 · You countered</span><b>₺260</b></div>
+      <div class="bubble them"><span class="meta">Round 3 · Mert countered</span><b>₺240</b></div>
+    </div>
+    <div class="timer">Your reply is due in<span class="mono">23:58:12</span></div>
+    <div class="alert a-blue"><b>Round limit reached</b>This is the last round. You can accept ₺240 or decline. If you decline, the negotiation ends and the listing stays Listed.</div>
+    <div class="small muted">2 other offers are pending on this item. Accepting declines them automatically.</div>
+  </div>
+  <div class="foot">
+    <button class="btn" data-go="ui-04c">Accept ₺240</button>
+    <div class="btnrow"><button class="btn" disabled>Counter</button><button class="btn dangerline">Decline</button></div>
+  </div>
+</section>
+
+<!-- UI-04b -->
+<section class="screen" data-id="ui-04b">
+  <div class="sbar"><span>10:25</span><span>5G ▮▮▮</span></div>
+  <div class="top"><button class="back" data-go="ui-02" aria-label="Back">‹</button><h3>Negotiation</h3><span class="pill p-gray">Expired</span></div>
+  <div class="body">
+    <div class="thread" style="opacity:.6">
+      <div class="bubble me"><span class="meta">Round 1 · Your offer · Tue 10:24</span><b>₺220</b></div>
+    </div>
+    <div class="alert a-amber"><b>Offer expired</b>Ayşe did not reply within 24 hours. The offer is closed and her reliability score dropped by 2 points (90 → 88).</div>
+    <div class="card"><dl class="kv"><dt>Listing</dt><dd>Still Listed at ₺300</dd><dt>Your score</dt><dd>80 (unchanged)</dd></dl></div>
+  </div>
+  <div class="foot"><button class="btn" data-go="ui-04">Send a new offer</button><button class="btn ghost" data-go="ui-02">Back to Browse</button></div>
+</section>
+
+<!-- UI-04c -->
+<section class="screen" data-id="ui-04c">
+  <div class="sbar"><span>11:03</span><span>5G ▮▮▮</span></div>
+  <div class="top"><h3>Deal agreed</h3><span class="pill p-reserved">Reserved</span></div>
+  <div class="body" style="text-align:center">
+    <div class="big-ok"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 12l5 5 9-10"/></svg></div>
+    <div><div class="price">₺240</div><div class="muted">Ayşe accepted your offer for DS&amp;A textbook</div></div>
+    <div class="card" style="text-align:left">
+      <div class="stat"><span>Listing status</span><span class="pill p-reserved">Reserved for you</span></div>
+      <div class="stat"><span>Other pending offers</span><b>2 declined automatically</b></div>
+      <div class="stat"><span>Payment</span><b>Cash at handover</b></div>
+    </div>
+    <div class="alert a-blue" style="text-align:left">Next, agree on an approved campus spot and time. The QR code for the handover is created after you both confirm.</div>
+  </div>
+  <div class="foot"><button class="btn" data-go="ui-05">Schedule handover</button></div>
+</section>
+
+<!-- UI-05 -->
+<section class="screen" data-id="ui-05">
+  <div class="sbar"><span>11:05</span><span>5G ▮▮▮</span></div>
+  <div class="top"><button class="back" data-go="ui-04c" aria-label="Back">‹</button><h3>Schedule handover</h3></div>
+  <div class="body">
+    <div class="small" style="font-weight:700">Approved campus spot</div>
+    <div class="radio on"><span class="dot"></span><div><b>Central Library – main entrance</b><div class="small muted">Şehit Prof. Dr. İlhan Varank Campus</div></div></div>
+    <div class="radio"><span class="dot"></span><div><b>Engineering Faculty – lobby</b></div></div>
+    <div class="radio"><span class="dot"></span><div><b>Student Center – info desk</b></div></div>
+    <div class="small" style="font-weight:700;margin-top:4px">Time slot · Fri 30 Oct</div>
+    <div class="chips"><span class="chip">12:00–12:30</span><span class="chip">13:00–13:30</span><span class="chip on">14:00–14:30</span><span class="chip">16:00–16:30</span></div>
+    <div class="alert a-green small">Ayşe proposed this spot and slot. Confirm to lock it in. A 15-minute grace period applies after 14:00.</div>
+  </div>
+  <div class="foot"><button class="btn" data-go="ui-06">Confirm handover</button></div>
+</section>
+
+<!-- UI-06 -->
+<section class="screen" data-id="ui-06">
+  <div class="sbar"><span>14:03</span><span>5G ▮▮▮</span></div>
+  <div class="top"><h3>Handover</h3><span class="pill p-reserved">Reserved</span></div>
+  <div class="body">
+    <div class="small muted" style="text-align:center">You are the seller. Show this code to <b>Mert K.</b></div>
+    <div class="qrbox"><canvas class="qr" width="25" height="25" data-seed="7"></canvas>
+      <div class="code">482 913</div>
+      <div class="small muted">Single use · valid for this handover only</div></div>
+    <div class="card"><dl class="kv"><dt>Where</dt><dd>Central Library – main entrance</dd><dt>When</dt><dd>Fri 30 Oct, 14:00–14:30</dd><dt>Price</dt><dd>₺240 in cash</dd></dl></div>
+  </div>
+  <div class="foot"><button class="btn sec" data-go="ui-06a">Switch to buyer view</button><button class="btn ghost" data-go="ui-07">Cancel handover</button></div>
+</section>
+
+<!-- UI-06a -->
+<section class="screen" data-id="ui-06a">
+  <div class="sbar" style="background:#0f1412;color:#fff"><span>14:04</span><span>5G ▮▮▮</span></div>
+  <div class="top" style="background:#0f1412;color:#fff"><button class="back" data-go="ui-06" aria-label="Back">‹</button><h3>Scan Ayşe's code</h3></div>
+  <div class="cam" data-go="ui-06c" style="cursor:pointer"><div class="frame"><canvas class="qr" width="25" height="25" data-seed="7"></canvas></div><div class="scanline"></div>
+    <div style="position:absolute;bottom:18px;left:0;right:0;text-align:center;color:#cfe;font-size:13px">Point the camera at the QR code on the seller's phone</div></div>
+  <div class="foot"><button class="btn sec" data-go="ui-06b">Enter 6-digit code instead</button><button class="btn ghost" data-go="ui-07">Cancel handover</button></div>
+</section>
+
+<!-- UI-06b -->
+<section class="screen" data-id="ui-06b">
+  <div class="sbar"><span>14:06</span><span>5G ▮▮▮</span></div>
+  <div class="top"><button class="back" data-go="ui-06a" aria-label="Back">‹</button><h3>Enter handover code</h3></div>
+  <div class="body" style="gap:16px">
+    <div class="small muted">Camera not working? Type the 6 digits shown under Ayşe's QR code.</div>
+    <div class="otp err"><span>4</span><span>8</span><span>2</span><span>9</span><span>3</span><span>1</span></div>
+    <div class="alert a-red"><b>Code doesn't match</b>Check the digits on Ayşe's screen and try again. 2 attempts left before you need a new code.</div>
+  </div>
+  <div class="foot"><button class="btn" data-go="ui-06c">Verify handover</button><button class="btn ghost" data-go="ui-07">Cancel handover</button></div>
+</section>
+
+<!-- UI-06c -->
+<section class="screen" data-id="ui-06c">
+  <div class="sbar"><span>14:07</span><span>5G ▮▮▮</span></div>
+  <div class="top"><h3>Handover verified</h3><span class="pill p-sold">Sold</span></div>
+  <div class="body" style="text-align:center">
+    <div class="big-ok"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M5 12l5 5 9-10"/></svg></div>
+    <div style="font-weight:700;font-size:16px">DS&amp;A textbook is now Sold</div>
+    <div class="card" style="text-align:left">
+      <div class="stat"><span>Your reliability</span><b>80 → 85 <span class="up">+5</span></b></div>
+      <div class="stat"><span>Ayşe's reliability</span><b>90 → 95 <span class="up">+5</span></b></div>
+      <div class="stat"><span>Reuse points (Books)</span><b><span class="up">+12</span> each</b></div>
+    </div>
+    <div class="alert a-amber" style="text-align:left"><b>Pay Ayşe ₺240 in cash now</b>CampusDeal doesn't handle payments.</div>
+  </div>
+  <div class="foot"><button class="btn" data-go="ui-02">Done</button></div>
+</section>
+
+<!-- UI-07 -->
+<section class="screen" data-id="ui-07">
+  <div class="sbar"><span>14:16</span><span>5G ▮▮▮</span></div>
+  <div class="top"><button class="back" data-go="ui-06" aria-label="Back">‹</button><h3>Cancel handover</h3></div>
+  <div class="body">
+    <div class="card"><dl class="kv"><dt>Agreed</dt><dd>Central Library – main entrance</dd><dt>Slot</dt><dd>Fri 30 Oct, 14:00–14:30</dd><dt>Grace period</dt><dd>Ended at 14:15</dd></dl></div>
+    <div class="small" style="font-weight:700">Why are you cancelling?</div>
+    <div class="radio on"><span class="dot"></span><div><b>No-show</b><div class="small muted">Mert didn't arrive within the grace period</div></div></div>
+    <div class="radio"><span class="dot"></span><div><b>Item doesn't match the listing</b><div class="small muted">Buyer only: condition or item differs</div></div></div>
+    <div class="alert a-amber small">Mert will be asked to accept a <b style="display:inline">−15 point</b> penalty or object to it. The listing returns to Listed right away.</div>
+  </div>
+  <div class="foot"><button class="btn danger" data-go="ui-08">Cancel handover</button><button class="btn ghost" data-go="ui-06">Keep waiting</button></div>
+</section>
+
+<!-- UI-07a -->
+<section class="screen" data-id="ui-07a">
+  <div class="sbar"><span>14:09</span><span>5G ▮▮▮</span></div>
+  <div class="top"><button class="back" data-go="ui-06" aria-label="Back">‹</button><h3>Cancel handover</h3></div>
+  <div class="body">
+    <div class="card"><dl class="kv"><dt>Slot</dt><dd>Fri 30 Oct, 14:00–14:30</dd><dt>Grace period</dt><dd>Ends at 14:15</dd></dl></div>
+    <div class="small" style="font-weight:700">Why are you cancelling?</div>
+    <div class="radio off"><span class="dot"></span><div><b>No-show</b><div class="small muted">Available from 14:15</div></div></div>
+    <div class="radio"><span class="dot"></span><div><b>Item doesn't match the listing</b></div></div>
+    <div class="alert a-red"><b>Too early to report a no-show</b>The other user still has <span class="mono">06:12</span> of the 15-minute grace period. You can report a no-show at 14:15.</div>
+  </div>
+  <div class="foot"><button class="btn" disabled>Cancel handover</button><button class="btn sec" data-go="ui-06">Back to handover code</button></div>
+</section>
+
+<!-- UI-08 -->
+<section class="screen" data-id="ui-08">
+  <div class="sbar"><span>14:31</span><span>5G ▮▮▮</span></div>
+  <div class="top"><h3>Penalty notice</h3><span class="pill p-red">Pending</span></div>
+  <div class="body">
+    <div class="alert a-red"><b>Ayşe cancelled the handover: No-show</b>She reported that you did not arrive by 14:15.</div>
+    <div class="card"><dl class="kv"><dt>Agreed</dt><dd>Central Library – main entrance</dd><dt>Slot</dt><dd>Fri 30 Oct, 14:00</dd><dt>Cancelled</dt><dd>14:16</dd><dt>Penalty</dt><dd><span class="down">−15</span> · 80 → 65</dd></dl></div>
+    <div class="small muted">Your score changes only if you accept or a moderator upholds the penalty.</div>
+    <div class="field"><label>Object to the penalty</label><div class="input focus" style="min-height:66px">I was waiting at the library's side entrance from 13:58. The spot wasn't clear to me.</div></div>
+  </div>
+  <div class="foot"><button class="btn" data-go="ui-08a">Send objection</button><button class="btn sec">Accept penalty</button></div>
+</section>
+
+<!-- UI-08a -->
+<section class="screen" data-id="ui-08a">
+  <div class="sbar"><span>14:33</span><span>5G ▮▮▮</span></div>
+  <div class="top"><h3>Dispute opened</h3><span class="pill p-review">Open</span></div>
+  <div class="body">
+    <div class="card"><div class="small muted">Dispute</div><div class="mono" style="font-size:18px">D-0142</div><div class="small">Penalty objection · No-show</div></div>
+    <div class="steps"><span class="on">Open</span><em></em><span>Investigating</span><em></em><span>Resolved</span></div>
+    <div class="alert a-blue"><b>Your score stays 80 for now</b>A campus moderator will check both statements and the handover log. You'll get a notification with the decision.</div>
+    <div class="card small"><b>Your statement</b><div class="muted" style="margin-top:4px">“I was waiting at the library's side entrance from 13:58. The spot wasn't clear to me.”</div></div>
+    <div class="alert a-green small">The listing is Listed again, so Ayşe can accept other offers.</div>
+  </div>
+  <div class="foot"><button class="btn" data-go="ui-02">Back to Browse</button></div>
+</section>
+
+<!-- UI-09 -->
+<section class="screen" data-id="ui-09" data-wide>
+  <div class="mod">
+    <div class="mside"><div class="brand">Campus<span style="color:#7ee0c2">Deal</span> <span style="font-size:11px;color:#9fb3a9;font-family:var(--f-body)">Moderation</span></div>
+      <a class="on">Disputes <em>3</em></a><a>Reported listings <em>1</em></a><a>Audit log</a><a>Users</a></div>
+    <div class="mmain">
+      <div style="display:flex;justify-content:space-between;align-items:center"><h3>Open cases</h3><span class="small muted">Signed in as Moderator · Selin A.</span></div>
+      <div class="chips"><span class="chip on">All 4</span><span class="chip">Penalty objections 2</span><span class="chip">Reported listings 1</span><span class="chip">Item mismatch 1</span></div>
+      <table class="q">
+        <tr><th>Case</th><th>Type</th><th>Parties / listing</th><th>Status</th><th>Opened</th></tr>
+        <tr class="hot" data-go="ui-09a"><td class="mono">D-0142</td><td>Penalty objection · No-show</td><td>Mert K. (blamed) · Ayşe Y.<br><span class="small muted">DS&amp;A textbook · −15 pending</span></td><td><span class="pill p-review">Open</span></td><td>Fri 14:33</td></tr>
+        <tr class="hot" data-go="ui-09b"><td class="mono">R-0087</td><td>Reported listing · Prohibited item</td><td>“Airsoft pistol, barely used”<br><span class="small muted">Seller: Emir D.</span></td><td><span class="pill p-review">Under Review</span></td><td>Fri 11:20</td></tr>
+        <tr><td class="mono">D-0139</td><td>Penalty objection · Item mismatch</td><td>Zeynep A. (blamed) · Okan B.<br><span class="small muted">Mini fridge · −20 pending</span></td><td><span class="pill p-blue p-reserved">Investigating</span></td><td>Thu 17:05</td></tr>
+        <tr><td class="mono">D-0136</td><td>Penalty objection · No-show</td><td>Deniz Ç. (blamed) · Ece G.</td><td><span class="pill p-reserved">Investigating</span></td><td>Wed 09:48</td></tr>
+      </table>
+      <div class="lock">All records are read-only and kept for one academic year.</div>
+    </div>
+  </div>
+</section>
+
+<!-- UI-09a -->
+<section class="screen" data-id="ui-09a" data-wide>
+  <div class="mod">
+    <div class="mside"><div class="brand">Campus<span style="color:#7ee0c2">Deal</span> <span style="font-size:11px;color:#9fb3a9;font-family:var(--f-body)">Moderation</span></div>
+      <a class="on" data-go="ui-09">Disputes <em>3</em></a><a>Reported listings <em>1</em></a><a>Audit log</a><a>Users</a></div>
+    <div class="mmain">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h3><span class="mono" style="font-size:16px">D-0142</span> · Penalty objection</h3><div class="steps"><span>Open</span><em style="width:16px;flex:none"></em><span class="on">Investigating</span><em style="width:16px;flex:none"></em><span>Resolved</span></div></div>
+      <div class="cols3">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div class="card small"><div style="display:flex;gap:8px;align-items:center"><div class="avatar av-m" style="width:28px;height:28px;font-size:11px">MK</div><b>Mert K. · blamed · 80</b></div><p class="muted" style="margin:8px 0 0">“I was waiting at the library's side entrance from 13:58. The spot wasn't clear to me.”</p></div>
+          <div class="card small"><div style="display:flex;gap:8px;align-items:center"><div class="avatar av-a" style="width:28px;height:28px;font-size:11px">AY</div><b>Ayşe Y. · reporter · 95</b></div><p class="muted" style="margin:8px 0 0">“I waited at the main entrance until 14:16. No message from him.”</p></div>
+        </div>
+        <div class="card"><div class="small" style="font-weight:700;margin-bottom:4px">Handover log</div>
+          <div class="log">
+            <div><span class="mono">Tue 11:03</span><span>Offer accepted at ₺240 · listing Reserved</span></div>
+            <div><span class="mono">Tue 11:06</span><span>Handover set: Central Library – main entrance, Fri 30 Oct 14:00–14:30</span></div>
+            <div><span class="mono">Fri 14:00</span><span>Slot started · grace period until 14:15</span></div>
+            <div><span class="mono">Fri 14:16:04</span><span>Cancelled by Ayşe · reason No-show · listing Listed</span></div>
+            <div><span class="mono">Fri 14:33</span><span>Mert objected · dispute Open</span></div>
+          </div>
+          <div class="lock" style="margin-top:6px">Read-only log</div></div>
+        <div class="card" style="display:flex;flex-direction:column;gap:8px">
+          <div class="small" style="font-weight:700">Decision</div>
+          <div class="radio on"><span class="dot"></span><div class="small"><b>Dismiss penalty</b><div class="muted">Mert stays at 80</div></div></div>
+          <div class="radio"><span class="dot"></span><div class="small"><b>Uphold penalty</b><div class="muted">Mert 80 → 65</div></div></div>
+          <textarea class="input small" id="note" aria-label="Decision note">The meeting point was ambiguous: the library has two entrances. Penalty removed.</textarea>
+          <button class="btn" style="font-size:14px;padding:10px" data-go="ui-09">Resolve dispute</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- UI-09b -->
+<section class="screen" data-id="ui-09b" data-wide>
+  <div class="mod">
+    <div class="mside"><div class="brand">Campus<span style="color:#7ee0c2">Deal</span> <span style="font-size:11px;color:#9fb3a9;font-family:var(--f-body)">Moderation</span></div>
+      <a data-go="ui-09">Disputes <em>3</em></a><a class="on">Reported listings <em>1</em></a><a>Audit log</a><a>Users</a></div>
+    <div class="mmain">
+      <div style="display:flex;justify-content:space-between;align-items:center"><h3><span class="mono" style="font-size:16px">R-0087</span> · Reported listing</h3><span class="pill p-review">Under Review</span></div>
+      <div class="cols3" style="grid-template-columns:1fr 1fr 1fr">
+        <div class="card"><div class="photo ph-chair" style="height:120px"><div class="shape" style="width:70px;height:28px;border-radius:6px"></div></div>
+          <div style="font-weight:700;margin-top:8px">Airsoft pistol, barely used</div><div class="price" style="font-size:22px">₺1.200</div><div class="small muted">Seller: Emir D. · reliability 71</div></div>
+        <div class="card small"><b>Reports (2)</b>
+          <div class="log" style="margin-top:6px"><div><span class="mono">Fri 11:20</span><span>Prohibited item: “Replica weapons aren't allowed on campus.”</span></div><div><span class="mono">Fri 12:02</span><span>Prohibited item (no note)</span></div></div>
+          <div class="alert a-amber" style="margin-top:8px">Hidden from Browse while Under Review.</div></div>
+        <div class="card" style="display:flex;flex-direction:column;gap:8px"><div class="small" style="font-weight:700">Decision</div>
+          <div class="radio"><span class="dot"></span><div class="small"><b>Restore listing</b><div class="muted">Back to Listed</div></div></div>
+          <div class="radio on"><span class="dot"></span><div class="small"><b>Remove listing</b><div class="muted">Permanently Removed</div></div></div>
+          <textarea class="input small" id="note2" aria-label="Decision note">Replica firearms are on the prohibited items list.</textarea>
+          <button class="btn danger" style="font-size:14px;padding:10px" data-go="ui-09">Remove and resolve</button></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+    </div></div></div>
+    <div class="caption" id="cap"><div class="row"><b id="capT"></b><span class="refs" id="capR"></span></div><p id="capD"></p></div>
+    <div class="pager"><button id="prev">‹ Previous</button><button id="next">Next ›</button></div>
+  </main>
+</div>
+
+<script>
+const META = [
+ ["Access and browsing", [
+  ["ui-01","UI-01","SSO Login","FR-01, NFR-01","Entry point. Only university SSO accounts get in; nothing is visible before login."],
+  ["ui-01e","UI-01-E","SSO Login – refused account","FR-01, NFR-01","Error state: the SSO returns an account outside MCBU and access is refused with a clear reason."],
+  ["ui-02","UI-02","Browse Listings","FR-03, FR-11","Listed items only, with category and price filters. The user's reuse points and reliability score are visible."],
+  ["ui-02a","UI-02a","New Listing","FR-02","Seller creates a listing with photos, category, price and condition. New listings start as Listed."],
+  ["ui-03","UI-03","Listing Detail","FR-04, FR-07, FR-16","Buyer sees price, condition and the seller's reliability score, then buys at list price or makes an offer."],
+  ["ui-03a","UI-03-E","Listing Detail – low-score limit","FR-14","Error state: a user below 40 points already has one active deal, so new offers are blocked with an explanation."],
+  ["ui-03b","UI-03b","Report Listing","FR-16","Any user can report a listing. It becomes Under Review and a dispute is opened for moderators."]]],
+ ["UC-01 Offer / counter-offer", [
+  ["ui-04","UI-04","Negotiation","FR-04–FR-07, NFR-04","Round 2 of 3 with both scores, the 24-hour reply timer and accept / counter / decline in one tap each."],
+  ["ui-04a","UI-04a","Negotiation – final round","FR-05","Round 3 reached: Counter is disabled and the seller can only accept or decline."],
+  ["ui-04b","UI-04-E","Negotiation – offer expired","FR-06","Error state: no reply in 24 hours, so the offer is Expired and the silent party loses 2 points."],
+  ["ui-04c","UI-04c","Deal Agreed – Reserved","FR-08, NFR-02","Offer accepted. The listing is Reserved and other pending offers are declined automatically."]]],
+ ["UC-02 OTP/QR handover", [
+  ["ui-05","UI-05","Schedule Handover","FR-09, NFR-06","Both users pick an approved campus spot and time slot. Cash payment at handover is stated up front."],
+  ["ui-06","UI-06","Handover Code – seller","FR-09, FR-10","Seller shows the single-use QR code and the 6-digit OTP for this handover."],
+  ["ui-06a","UI-06a","Scan Code – buyer","FR-10, NFR-03","Buyer scans the seller's QR code. A fallback to manual code entry is always visible."],
+  ["ui-06b","UI-06-E","Enter Code – wrong OTP","FR-10","Recovery state: manual OTP entry after a camera failure, here with a mismatched code and remaining attempts."],
+  ["ui-06c","UI-06c","Handover Verified – Sold","FR-10, FR-11","Listing is Sold, both scores get +5 and both users get reuse points. Cash payment reminder."]]],
+ ["UC-03 Cancellation and score", [
+  ["ui-07","UI-07","Cancel Handover","FR-12, FR-13","After the 15-minute grace period the user cancels with a reason. The listing returns to Listed."],
+  ["ui-07a","UI-07-E","Cancel – grace period not over","FR-12, NFR-03","Error state: no-show cannot be reported yet; the remaining grace time is shown."],
+  ["ui-08","UI-08","Penalty Notice","FR-13, FR-15","Blamed user sees the pending penalty and either accepts it or objects with a statement."],
+  ["ui-08a","UI-08a","Dispute Opened","FR-15","Objection sent: dispute is Open and the score stays unchanged until a moderator decides."]]],
+ ["UC-04 Moderation", [
+  ["ui-09","UI-09","Moderator Case Queue","FR-16, FR-17, NFR-07","Desktop panel listing penalty objections and reported listings with their status."],
+  ["ui-09a","UI-09a","Dispute Review","FR-17, NFR-07","Moderator reads both statements and the read-only log, then dismisses or upholds the penalty."],
+  ["ui-09b","UI-09b","Reported Listing Review","FR-16, FR-17","Moderator restores the listing to Listed or removes it permanently."]]]
+];
+const FLAT = META.flatMap(g=>g[1]);
+const idx = document.getElementById('index');
+META.forEach(([g,items])=>{
+  const h=document.createElement('h2');h.textContent=g;idx.appendChild(h);
+  items.forEach(it=>{const b=document.createElement('button');b.dataset.target=it[0];b.innerHTML=`<span class="id">${it[1]}</span><span>${it[2]}</span>`;b.onclick=()=>show(it[0]);idx.appendChild(b);});
+});
+const device=document.getElementById('device');
+let cur=0;
+function show(id,noHash){
+  const i=FLAT.findIndex(f=>f[0]===id); if(i<0) return; cur=i;
+  document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.dataset.id===id));
+  const scr=document.querySelector(`.screen[data-id="${id}"]`);
+  device.classList.toggle('wide',scr.hasAttribute('data-wide'));
+  const m=FLAT[i];
+  document.getElementById('capT').textContent=`${m[1]} · ${m[2]}`;
+  document.getElementById('capR').textContent=m[3];
+  document.getElementById('capD').textContent=m[4];
+  idx.querySelectorAll('button').forEach(b=>b.setAttribute('aria-current',b.dataset.target===id));
+  if(!noHash){try{history.replaceState(null,'','#'+id)}catch(e){}}
+}
+window.show=show;
+document.addEventListener('click',e=>{const t=e.target.closest('[data-go]');if(t&&device.contains(t)){show(t.dataset.go)}});
+document.getElementById('prev').onclick=()=>show(FLAT[(cur-1+FLAT.length)%FLAT.length][0]);
+document.getElementById('next').onclick=()=>show(FLAT[(cur+1)%FLAT.length][0]);
+// deterministic QR-like pattern
+document.querySelectorAll('canvas.qr').forEach(c=>{
+  const n=25,ctx=c.getContext('2d');let s=+c.dataset.seed||1;const r=()=>{s=(s*16807)%2147483647;return s/2147483647};
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,n,n);ctx.fillStyle='#111';
+  for(let y=0;y<n;y++)for(let x=0;x<n;x++){if(r()>.52)ctx.fillRect(x,y,1,1)}
+  const finder=(x,y)=>{ctx.fillStyle='#fff';ctx.fillRect(x-1,y-1,9,9);ctx.fillStyle='#111';ctx.fillRect(x,y,7,7);ctx.fillStyle='#fff';ctx.fillRect(x+1,y+1,5,5);ctx.fillStyle='#111';ctx.fillRect(x+2,y+2,3,3)};
+  finder(0,0);finder(18,0);finder(0,18);
+});
+const start=(location.hash||'').slice(1);
+show(FLAT.some(f=>f[0]===start)?start:'ui-01',true);
+</script>
+
+</body>
+</html>
